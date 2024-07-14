@@ -1,6 +1,6 @@
 module github.com/viktor8881/codegen
 
-go 1.22
+go 1.22.4
 
 require github.com/spf13/cobra v1.8.1
 
