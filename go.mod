@@ -1,4 +1,4 @@
-module codegen
+module github.com/viktor8881/codegen
 
 go 1.22
 
