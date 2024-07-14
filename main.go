@@ -1,8 +1,8 @@
 package main
 
 import (
-	"codegen/command"
 	"fmt"
+	"github.com/viktor8881/codegen/command"
 	"os"
 
 	"github.com/spf13/cobra"
