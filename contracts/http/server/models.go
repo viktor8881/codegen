@@ -1,4 +1,4 @@
-package contracts
+package server
 
 type UserResponse struct {
 	Id    int64  `json:"id"`
@@ -46,6 +46,43 @@ type UpdateUserResponse struct {
 type DeleteUserRequest struct {
 	Id int64 `json:"id"`
 }
+
+type GetRoleRequest struct {
+	Id int64 `json:"id" form:"id" valid:"int,required"`
+}
+
+type GetRoleResponse struct {
+	Id   int64  `json:"id" form:"id" valid:"int,required"`
+	Name string `json:"name" form:"name" valid:"string,required"`
+}
+
+type CreateRoleRequest struct {
+	Name string `json:"name" form:"name" valid:"string,required"`
+}
+
+type CreateRoleResponse struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
+}
+type UpdateRoleRequest struct {
+	Id   int64  `json:"id" form:"id" valid:"int,required"`
+	Name string `json:"name" form:"name" valid:"string,required"`
+}
+
+type UpdateRoleResponse struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type DeleteRoleRequest struct {
+	Id int64 `json:"id" form:"id" valid:"int,required"`
+}
+
+type GetEmployeeRequest struct {
+	Id int64 `json:"id" form:"id" valid:"int,required"`
+}
+
+type GetEmployeeResponse any
 
 type EmptyRequest struct{}
 
