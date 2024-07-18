@@ -306,10 +306,12 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 		var buf bytes.Buffer
 		data := struct {
 			Name               string
+			ServiceName        string
 			ServiceNameToLower string
 			ServiceMethod      string
 		}{
 			Name:               e.Name,
+			ServiceName:        e.ServiceName,
 			ServiceNameToLower: strings.ToLower(e.ServiceName),
 			ServiceMethod:      e.ServiceMethod,
 		}

@@ -84,6 +84,12 @@ type GetEmployeeRequest struct {
 
 type GetEmployeeResponse any
 
+type GetPostRequest struct {
+	Id int64 `json:"id" form:"id" valid:"int,required"`
+}
+
+type GetPostResponse any
+
 type EmptyRequest struct{}
 
 type EmptyResponse struct{}

@@ -197,7 +197,7 @@ func ErrorHandlerHelper(w http.ResponseWriter,
 const tmplAddCodeToRouterFile = `
 generated.{{.Name}}(
 		tr,
-		{{.ServiceNameToLower}}.NewService().{{.ServiceMethod}},
+		{{.ServiceNameToLower}}.New{{.ServiceName}}Service().{{.ServiceMethod}},
 		logger,
 		{{.ServiceNameToLower}}.ErrorHandler,
 	)

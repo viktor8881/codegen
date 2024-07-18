@@ -106,8 +106,8 @@
     "Method": "GET",
     "Url": "/posts",
     "ServiceName": "Post",
-    "ServiceMethod": "GetEmployee",
-    "InputRequest": "GetEmployeeRequest",
-    "OutputResponse": "GetEmployeeResponse"
+    "ServiceMethod": "GetPost",
+    "InputRequest": "GetPostRequest",
+    "OutputResponse": "GetPostResponse"
   }
 ]
