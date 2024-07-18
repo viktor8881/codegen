@@ -99,7 +99,17 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 		return nil, err
 	}
 
-	tmplLogicServiceFile, err := template.New("gen_structure").Parse(tmplLogicServiceFile)
+	tmplLSFile, err := template.New("gen_logic_service").Parse(tmplLogicServiceFile)
+	if err != nil {
+		return nil, err
+	}
+
+	tmplLSEndpoint, err := template.New("gen_logic_service_endpoints").Parse(tmplLogicServiceEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	tmplErrFile, err := template.New("gen_error_handler_file").Parse(tmplErrorFile)
 	if err != nil {
 		return nil, err
 	}
@@ -113,12 +123,7 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 		}
 		res = append(res, buf.String())
 
-		tmplLogicServiceEndpoint, err := template.New("gen_endpoints").Parse(tmplLogicServiceEndpoint)
-		if err != nil {
-			return nil, err
-		}
-
-		err = createInnerFiles(e, tmplLogicServiceFile, tmplLogicServiceEndpoint)
+		err = createInnerFiles(e, tmplLSFile, tmplLSEndpoint, tmplErrFile)
 		if err != nil {
 			fmt.Println("err create inner files: ", err)
 			return nil, err
@@ -149,7 +154,7 @@ func copyFile(src, dst string) error {
 	return destinationFile.Sync()
 }
 
-func createInnerFiles(e Endpoint, tmplFile, tmplService *template.Template) error {
+func createInnerFiles(e Endpoint, tmplFile, tmplService, tmplErrorFile *template.Template) error {
 	dirname := "./inner/" + strings.ToLower(e.ServiceName)
 	err := createDirIfNeed(dirname)
 	if err != nil {
@@ -157,8 +162,30 @@ func createInnerFiles(e Endpoint, tmplFile, tmplService *template.Template) erro
 		return err
 	}
 
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Ошибка получения текущей директории:", err)
+		return err
+	}
+
+	data := struct {
+		PackageName        string
+		ServiceName        string
+		ServiceNameToLower string
+	}{
+		PackageName:        filepath.Base(dir),
+		ServiceName:        e.ServiceName,
+		ServiceNameToLower: strings.ToLower(e.ServiceName),
+	}
+
+	err = createHadlerErrorFileIfNeed(dirname+"/error.go", tmplErrorFile, data)
+	if err != nil {
+		fmt.Println("err createLogicServiceFileIfNeed: ", err)
+		return err
+	}
+
 	logicServiceFileName := dirname + "/logic_service.go"
-	err = createLogicServiceFileIfNeed(logicServiceFileName, tmplFile, e)
+	err = createLogicServiceFileIfNeed(logicServiceFileName, tmplFile, data)
 	if err != nil {
 		fmt.Println("err createLogicServiceFileIfNeed: ", err)
 		return err
@@ -206,7 +233,7 @@ func InArray[T comparable](slice []T, val T) bool {
 	return false
 }
 
-func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, e Endpoint) error {
+func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, dstr any) error {
 	fStat, err := os.Stat(fileName)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -220,22 +247,6 @@ func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, 
 			return err
 		}
 		defer f.Close()
-
-		dir, err := os.Getwd()
-		if err != nil {
-			fmt.Println("Ошибка получения текущей директории:", err)
-			return err
-		}
-
-		dstr := struct {
-			PackageName        string
-			ServiceName        string
-			ServiceNameToLower string
-		}{
-			PackageName:        filepath.Base(dir),
-			ServiceName:        e.ServiceName,
-			ServiceNameToLower: strings.ToLower(e.ServiceName),
-		}
 
 		err = tmplFile.Execute(f, dstr)
 		if err != nil {
@@ -282,6 +293,30 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 		if err != nil {
 			fmt.Println("err call tmpl.Execute: ", err)
 			return err
+		}
+	}
+
+	return nil
+}
+
+func createHadlerErrorFileIfNeed(fileName string, tmplFile *template.Template, data any) error {
+	fStat, err := os.Stat(fileName)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	if fStat == nil {
+		// create new file
+		f, err := os.Create(fileName)
+		if err != nil {
+			fmt.Println("err create file "+fileName, err)
+			return err
+		}
+		defer f.Close()
+
+		err = tmplFile.Execute(f, data)
+		if err != nil {
+			fmt.Println("err call tmpl.Execute", err)
 		}
 	}
 
