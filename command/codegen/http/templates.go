@@ -91,16 +91,20 @@ const tmplLogicServiceFile = `package {{.ServiceNameToLower}}
 import (
 	"context"
 	"errors"
-	simplehttp "github.com/viktor8881/service-utilities/http/client"
 	generated "{{.PackageName}}/generated/http/server"
 )
 
 type {{.ServiceName}}Service struct {}
+
+func New{{.ServiceName}}Service() *{{.ServiceName}}Service {
+	return &{{.ServiceName}}Service{}
+}
 `
 
 const tmplLogicServiceEndpoint = `
-func {{.ServiceMethod}}(ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error) {
-	return &generated.{{.OutputResponse}}{}, errors.New("not implemented")
+func (s *{{.ServiceName}}Service) {{.ServiceMethod}}(ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error) {
+	var dest generated.{{.OutputResponse}}
+	return &dest, errors.New("not implemented")
 }
 `
 
