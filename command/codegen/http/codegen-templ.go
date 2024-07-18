@@ -1,7 +1,6 @@
 package http
 
-const tmplServerEndpointFile = `
-package server
+const tmplServerEndpointFile = `package server
 
 import (
 	"context"
@@ -38,8 +37,7 @@ func {{.Name}}(
 }
 `
 
-const tmplClientEndpointFile = `
-package client
+const tmplClientEndpointFile = `package client
 
 import (
 	"context"
@@ -51,7 +49,6 @@ import (
 
 {{ . }}
 {{- end }}
-
 `
 
 const tmplClientEndpoint = `
@@ -78,5 +75,23 @@ func {{.Name}}(
 	}
 
 	return &dest, nil
+}
+`
+
+const tmplLogicServiceFile = `package {{.ServiceNameToLower}}
+
+import (
+	"context"
+	"errors"
+	simplehttp "github.com/viktor8881/service-utilities/http/client"
+	generated "{{.PackageName}}/generated/http/server"
+)
+
+type {{.ServiceName}}Service struct {}
+`
+
+const tmplLogicServiceEndpoint = `
+func {{.ServiceMethod}}(ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error) {
+	return *generated.{{.OutputResponse}}{}, errors.New("not implemented")
 }
 `

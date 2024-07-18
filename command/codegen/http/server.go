@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"go/ast"
 	"go/parser"
-	"go/printer"
 	"go/token"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"text/template"
 	"unicode"
 )
@@ -38,6 +39,12 @@ func GenerateHttpServerFile(dirName string) error {
 		Models    []string
 	}{}
 
+	// Создание директории, если она не существует
+	if err := os.MkdirAll("./generated"+dirName, os.ModePerm); err != nil {
+		fmt.Println("err make dir "+dirName+": ", err)
+		return err
+	}
+
 	endpoints, err := GenerateHttpServerEndpoints(dirName)
 	if err != nil {
 		fmt.Println("err call GenerateHttpServerEndpoints: ", err)
@@ -49,12 +56,7 @@ func GenerateHttpServerFile(dirName string) error {
 		data.Endpoints = append(data.Endpoints, e)
 	}
 
-	// Создание директории, если она не существует
-	if err := os.MkdirAll("./generated"+dirName, os.ModePerm); err != nil {
-		fmt.Println("err make dir "+dirName+": ", err)
-		return err
-	}
-
+	// copy models.go
 	if err := copyFile("./contracts"+dirName+"/models.go", "./generated"+dirName+"/models.go"); err != nil {
 		log.Fatalf("failed to copy file: %v", err)
 	}
@@ -72,7 +74,7 @@ func GenerateHttpServerFile(dirName string) error {
 		return err
 	}
 
-	log.Println("File created successfully")
+	log.Println("File is generated successfully")
 	return nil
 }
 
@@ -97,6 +99,11 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 		return nil, err
 	}
 
+	tmplLogicServiceFile, err := template.New("gen_structure").Parse(tmplLogicServiceFile)
+	if err != nil {
+		return nil, err
+	}
+
 	res := make([]string, 0, len(endpoints))
 	for _, e := range endpoints {
 		var buf bytes.Buffer
@@ -105,50 +112,20 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 			return nil, err
 		}
 		res = append(res, buf.String())
+
+		tmplLogicServiceEndpoint, err := template.New("gen_endpoints").Parse(tmplLogicServiceEndpoint)
+		if err != nil {
+			return nil, err
+		}
+
+		err = createInnerFiles(e, tmplLogicServiceFile, tmplLogicServiceEndpoint)
+		if err != nil {
+			fmt.Println("err create inner files: ", err)
+			return nil, err
+		}
 	}
 
 	return res, nil
-}
-
-func ParceFile(filePath string) ([]string, error) {
-	fset := token.NewFileSet()
-
-	node, err := parser.ParseFile(fset, filePath, nil, parser.AllErrors)
-	if err != nil {
-		return nil, err
-	}
-	models := make([]string, 0)
-
-	// Обходим AST и выводим все публичные структуры, имя которых заканчивается на "Request" или "Response"
-	ast.Inspect(node, func(n ast.Node) bool {
-		switch x := n.(type) {
-		case *ast.TypeSpec:
-			if structType, ok := x.Type.(*ast.StructType); ok {
-				//fmt.Printf("Struct: %s\n", x.Name.Name)
-				var buf bytes.Buffer
-				printer.Fprint(&buf, fset, structType)
-				//fmt.Println(buf.String())
-				models = append(models, "type "+capitalize(x.Name.Name)+" "+buf.String())
-			}
-		case *ast.FuncDecl:
-			// Выводим публичные функции, если это нужно
-			if unicode.IsUpper(rune(x.Name.Name[0])) {
-				fmt.Printf("Function: %s\n", x.Name.Name)
-			}
-		}
-		return true
-	})
-
-	return models, err
-}
-
-func capitalize(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	runes := []rune(s)
-	runes[0] = unicode.ToUpper(runes[0])
-	return string(runes)
 }
 
 func copyFile(src, dst string) error {
@@ -170,4 +147,143 @@ func copyFile(src, dst string) error {
 	}
 
 	return destinationFile.Sync()
+}
+
+func createInnerFiles(e Endpoint, tmplFile, tmplService *template.Template) error {
+	dirname := "./inner/" + strings.ToLower(e.ServiceName)
+	err := createDirIfNeed(dirname)
+	if err != nil {
+		fmt.Println("err create dir "+dirname+": ", err)
+		return err
+	}
+
+	logicServiceFileName := dirname + "/logic_service.go"
+	err = createLogicServiceFileIfNeed(logicServiceFileName, tmplFile, e)
+	if err != nil {
+		fmt.Println("err createLogicServiceFileIfNeed: ", err)
+		return err
+	}
+
+	err = addMethodToLogicServiceFileIfNeed(logicServiceFileName, tmplService, e)
+	if err != nil {
+		fmt.Println("err addMethodToLogicServiceFileIfNeed: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func listFunctionByFileName(filePath string) (map[string]string, error) {
+	fset := token.NewFileSet()
+
+	node, err := parser.ParseFile(fset, filePath, nil, parser.AllErrors)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]string, 0)
+
+	// Обходим AST и выводим все публичные структуры, имя которых заканчивается на "Request" или "Response"
+	ast.Inspect(node, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.FuncDecl:
+			// Выводим публичные функции, если это нужно
+			if unicode.IsUpper(rune(x.Name.Name[0])) {
+				result[x.Name.Name] = x.Name.Name
+			}
+		}
+		return true
+	})
+
+	return result, err
+}
+
+func InArray[T comparable](slice []T, val T) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
+}
+
+func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, e Endpoint) error {
+	fStat, err := os.Stat(fileName)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	if fStat == nil {
+		// create new file
+		f, err := os.Create(fileName)
+		if err != nil {
+			fmt.Println("err create file "+fileName, err)
+			return err
+		}
+		defer f.Close()
+
+		dir, err := os.Getwd()
+		if err != nil {
+			fmt.Println("Ошибка получения текущей директории:", err)
+			return err
+		}
+
+		dstr := struct {
+			PackageName        string
+			ServiceName        string
+			ServiceNameToLower string
+		}{
+			PackageName:        filepath.Base(dir),
+			ServiceName:        e.ServiceName,
+			ServiceNameToLower: strings.ToLower(e.ServiceName),
+		}
+
+		err = tmplFile.Execute(f, dstr)
+		if err != nil {
+			fmt.Println("err call tmpl.Execute: ", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createDirIfNeed(dirname string) error {
+	dState, err := os.Stat(dirname)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	if dState == nil {
+		if err := os.MkdirAll(dirname, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Template, e Endpoint) error {
+	// check all function in file  dirname + "/logic_service.go
+	fNames, err := listFunctionByFileName(fileName)
+	if err != nil {
+		fmt.Println("err list function by file name: ", err)
+		return err
+	}
+
+	if _, ok := fNames[e.ServiceMethod]; !ok {
+		//write in the ed file next
+		f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			fmt.Println("err open file "+fileName, err)
+			return err
+		}
+
+		err = tmplService.Execute(f, e)
+		if err != nil {
+			fmt.Println("err call tmpl.Execute: ", err)
+			return err
+		}
+	}
+
+	return nil
 }

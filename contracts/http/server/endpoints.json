@@ -4,7 +4,7 @@
     "Description": "list user",
     "Method": "GET",
     "Url": "/user/list",
-    "ServiceName": "user",
+    "ServiceName": "User",
     "ServiceMethod": "ListUser",
     "InputRequest": "EmptyRequest",
     "OutputResponse": "ListUserResponse"
@@ -14,7 +14,7 @@
     "Description": "Get user by id",
     "Method": "GET",
     "Url": "/user",
-    "ServiceName": "user",
+    "ServiceName": "User",
     "ServiceMethod": "GetUser",
     "InputRequest": "GetUserRequest",
     "OutputResponse": "GetUserResponse"
@@ -24,7 +24,7 @@
     "Description": "Create user",
     "Method": "POST",
     "Url": "/user/create",
-    "ServiceName": "user",
+    "ServiceName": "User",
     "ServiceMethod": "CreateUser",
     "InputRequest": "CreateUserRequest",
     "OutputResponse": "CreateUserResponse"
@@ -34,7 +34,7 @@
     "Description": "Update user",
     "Method": "POST",
     "Url": "/user/update",
-    "ServiceName": "user",
+    "ServiceName": "User",
     "ServiceMethod": "UpdateUser",
     "InputRequest": "UpdateUserRequest",
     "OutputResponse": "UpdateUserResponse"
@@ -44,7 +44,7 @@
     "Description": "Delete user",
     "Method": "POST",
     "Url": "/user/delete",
-    "ServiceName": "user",
+    "ServiceName": "User",
     "ServiceMethod": "DeleteUser",
     "InputRequest": "DeleteUserRequest",
     "OutputResponse": "EmptyResponse"
@@ -54,7 +54,7 @@
     "Description": "Get role by id",
     "Method": "GET",
     "Url": "/role",
-    "ServiceName": "role",
+    "ServiceName": "Role",
     "ServiceMethod": "GetRole",
     "InputRequest": "GetRoleRequest",
     "OutputResponse": "GetRoleResponse"
@@ -64,7 +64,7 @@
     "Description": "Create role",
     "Method": "POST",
     "Url": "/role/create",
-    "ServiceName": "role",
+    "ServiceName": "Role",
     "ServiceMethod": "CreateRole",
     "InputRequest": "CreateRoleRequest",
     "OutputResponse": "CreateRoleResponse"
@@ -74,7 +74,7 @@
     "Description": "Update role",
     "Method": "POST",
     "Url": "/role/update",
-    "ServiceName": "role",
+    "ServiceName": "Role",
     "ServiceMethod": "UpdateRole",
     "InputRequest": "UpdateRoleRequest",
     "OutputResponse": "UpdateRoleResponse"
@@ -84,7 +84,7 @@
     "Description": "Delete role",
     "Method": "POST",
     "Url": "/role/delete",
-    "ServiceName": "role",
+    "ServiceName": "Role",
     "ServiceMethod": "DeleteRole",
     "InputRequest": "DeleteRoleRequest",
     "OutputResponse": "EmptyResponse"
@@ -95,7 +95,17 @@
     "Description": "Get Employee by id",
     "Method": "GET",
     "Url": "/employee",
-    "ServiceName": "employee",
+    "ServiceName": "Employee",
+    "ServiceMethod": "GetEmployee",
+    "InputRequest": "GetEmployeeRequest",
+    "OutputResponse": "GetEmployeeResponse"
+  },
+  {
+    "Name": "GetPostEndpoint",
+    "Description": "Get Article by id",
+    "Method": "GET",
+    "Url": "/posts",
+    "ServiceName": "Post",
     "ServiceMethod": "GetEmployee",
     "InputRequest": "GetEmployeeRequest",
     "OutputResponse": "GetEmployeeResponse"

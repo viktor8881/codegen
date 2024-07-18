@@ -38,6 +38,7 @@ func GenerateHttpClientFile(dirName string) error {
 		return err
 	}
 
+	// copy models.go
 	if err := copyFile("./contracts"+dirName+"/models.go", "./generated"+dirName+"/models.go"); err != nil {
 		log.Fatalf("failed to copy file: %v", err)
 	}
