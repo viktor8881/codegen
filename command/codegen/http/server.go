@@ -146,6 +146,12 @@ func copyFile(src, dst string) error {
 	}
 	defer destinationFile.Close()
 
+	_, err = destinationFile.WriteString(tmplCodeGeneratorPhrase)
+	if err != nil {
+		fmt.Println("Ошибка записи строки в файл назначения:", err)
+		return err
+	}
+
 	_, err = io.Copy(destinationFile, sourceFile)
 	if err != nil {
 		return err
@@ -294,6 +300,26 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 			fmt.Println("err call tmpl.Execute: ", err)
 			return err
 		}
+
+		fmt.Println("Add next code to your router file:")
+		tmplRouterCode := template.Must(template.New("service").Parse(tmplAddCodeToRouterFile))
+		var buf bytes.Buffer
+		data := struct {
+			Name               string
+			ServiceNameToLower string
+			ServiceMethod      string
+		}{
+			Name:               e.Name,
+			ServiceNameToLower: strings.ToLower(e.ServiceName),
+			ServiceMethod:      e.ServiceMethod,
+		}
+		err = tmplRouterCode.Execute(&buf, data)
+		if err != nil {
+			fmt.Println("err call tmplRouterCode.Execute: ", err)
+			return err
+		}
+
+		fmt.Println(buf.String())
 	}
 
 	return nil
