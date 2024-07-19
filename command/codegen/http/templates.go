@@ -108,97 +108,11 @@ func (s *{{.ServiceName}}Service) {{.ServiceMethod}}(ctx context.Context, in *ge
 }
 `
 
-const tmplErrorFile = `package {{.ServiceNameToLower}}
-
-import (
-	"errors"
-	customHttp "github.com/viktor8881/service-utilities/http/server"
-	"go.uber.org/zap"
-	"net/http"
-	"{{.PackageName}}/utils"
-)
-
-
-func ErrorHandler(w http.ResponseWriter,
-	r *http.Request,
-	err error,
-	logger *zap.Logger,
-) {
-	var decodeEncodeError *customHttp.DecodeEncodeError
-	var methodNotAllowedError *customHttp.MethodNotAllowedError	
-
-	var code int
-	var message string
-
-	switch {
-	case errors.As(err, &methodNotAllowedError):
-		code = http.StatusMethodNotAllowed
-		message = "method not allowed"
-	case errors.As(err, &decodeEncodeError):
-		code = decodeEncodeError.Code2user
-		message = decodeEncodeError.Mess2user
-	default:
-		code = http.StatusInternalServerError
-		message = "internal server error"
-	}
-
-	utils.ErrorHandlerHelper(w, r, err, logger, code, message)
-}
-
-`
-
-const tmplUtilsErrorHelperFile = `package utils
-
-import (
-	"encoding/json"
-	"go.uber.org/zap"
-	"io"
-	"net/http"
-)
-
-func ErrorHandlerHelper(w http.ResponseWriter,
-	r *http.Request,
-	err error,
-	logger *zap.Logger,
-	code int,
-	message string,
-) {
-
-	var bodyStr string
-	if r.Body != nil {
-		body, _ := io.ReadAll(r.Body)
-		defer r.Body.Close()
-
-		bodyStr = string(body)
-	} else {
-		bodyStr = r.URL.Query().Encode()
-	}
-
-	logger.Error(message,
-		zap.String("url", r.Method+": "+r.URL.String()),
-		zap.String("body", bodyStr),
-		zap.String("url", r.URL.String()),
-		zap.Error(err))
-
-	w.WriteHeader(code)
-
-	if code >= 400 && code < 500 {
-		errorResponse := struct {
-			Message string	{{.TagJsonErrorMess}}
-		}{
-			Message: message,
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(&errorResponse)
-	}
-}
-`
-
 const tmplAddCodeToRouterFile = `
 generated.{{.Name}}(
 		tr,
 		{{.ServiceNameToLower}}.New{{.ServiceName}}Service().{{.ServiceMethod}},
 		logger,
-		{{.ServiceNameToLower}}.ErrorHandler,
+		server.ErrorHandler,
 	)
 `

@@ -29,10 +29,4 @@ func CodeGen(cmd *cobra.Command, args []string) {
 		fmt.Println("err GenerateHttpClientFile: ", err)
 		return
 	}
-
-	err = http.GenerateUtilsErrorHandlerFile("./utils/error_handler.go")
-	if err != nil {
-		fmt.Println("err GenerateUtilsErrorHandlerFile: ", err)
-		return
-	}
 }

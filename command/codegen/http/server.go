@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -109,11 +110,6 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 		return nil, err
 	}
 
-	tmplErrFile, err := template.New("gen_error_handler_file").Parse(tmplErrorFile)
-	if err != nil {
-		return nil, err
-	}
-
 	res := make([]string, 0, len(endpoints))
 	for _, e := range endpoints {
 		var buf bytes.Buffer
@@ -123,7 +119,7 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 		}
 		res = append(res, buf.String())
 
-		err = createInnerFiles(e, tmplLSFile, tmplLSEndpoint, tmplErrFile)
+		err = createInnerFiles(e, tmplLSFile, tmplLSEndpoint)
 		if err != nil {
 			fmt.Println("err create inner files: ", err)
 			return nil, err
@@ -160,17 +156,16 @@ func copyFile(src, dst string) error {
 	return destinationFile.Sync()
 }
 
-func createInnerFiles(e Endpoint, tmplFile, tmplService, tmplErrorFile *template.Template) error {
-	dirname := "./inner/" + strings.ToLower(e.ServiceName)
-	err := createDirIfNeed(dirname)
+func createInnerFiles(e Endpoint, tmplFile, tmplService *template.Template) error {
+	packageName, err := getPackageName()
 	if err != nil {
-		fmt.Println("err create dir "+dirname+": ", err)
-		return err
+		fmt.Println("err getPackageName: ", err)
 	}
 
-	dir, err := os.Getwd()
+	dirname := "./inner/" + strings.ToLower(e.ServiceName)
+	err = createDirIfNeed(dirname)
 	if err != nil {
-		fmt.Println("Ошибка получения текущей директории:", err)
+		fmt.Println("err create dir "+dirname+": ", err)
 		return err
 	}
 
@@ -179,15 +174,9 @@ func createInnerFiles(e Endpoint, tmplFile, tmplService, tmplErrorFile *template
 		ServiceName        string
 		ServiceNameToLower string
 	}{
-		PackageName:        filepath.Base(dir),
+		PackageName:        packageName,
 		ServiceName:        e.ServiceName,
 		ServiceNameToLower: strings.ToLower(e.ServiceName),
-	}
-
-	err = createHadlerErrorFileIfNeed(dirname+"/error.go", tmplErrorFile, data)
-	if err != nil {
-		fmt.Println("err createLogicServiceFileIfNeed: ", err)
-		return err
 	}
 
 	logicServiceFileName := dirname + "/logic_service.go"
@@ -213,13 +202,11 @@ func listFunctionByFileName(filePath string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := make(map[string]string, 0)
+	result := make(map[string]string)
 
-	// Обходим AST и выводим все публичные структуры, имя которых заканчивается на "Request" или "Response"
 	ast.Inspect(node, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.FuncDecl:
-			// Выводим публичные функции, если это нужно
 			if unicode.IsUpper(rune(x.Name.Name[0])) {
 				result[x.Name.Name] = x.Name.Name
 			}
@@ -230,15 +217,6 @@ func listFunctionByFileName(filePath string) (map[string]string, error) {
 	return result, err
 }
 
-func InArray[T comparable](slice []T, val T) bool {
-	for _, item := range slice {
-		if item == val {
-			return true
-		}
-	}
-	return false
-}
-
 func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, dstr any) error {
 	fStat, err := os.Stat(fileName)
 	if err != nil && !os.IsNotExist(err) {
@@ -246,7 +224,6 @@ func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, 
 	}
 
 	if fStat == nil {
-		// create new file
 		f, err := os.Create(fileName)
 		if err != nil {
 			fmt.Println("err create file "+fileName, err)
@@ -280,7 +257,6 @@ func createDirIfNeed(dirname string) error {
 }
 
 func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Template, e Endpoint) error {
-	// check all function in file  dirname + "/logic_service.go
 	fNames, err := listFunctionByFileName(fileName)
 	if err != nil {
 		fmt.Println("err list function by file name: ", err)
@@ -288,7 +264,7 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 	}
 
 	if _, ok := fNames[e.ServiceMethod]; !ok {
-		//write in the ed file next
+		// add method code to file
 		f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0644)
 		if err != nil {
 			fmt.Println("err open file "+fileName, err)
@@ -327,26 +303,34 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 	return nil
 }
 
-func createHadlerErrorFileIfNeed(fileName string, tmplFile *template.Template, data any) error {
-	fStat, err := os.Stat(fileName)
-	if err != nil && !os.IsNotExist(err) {
-		return err
+func getPackageName() (string, error) {
+	file, err := os.Open("go.mod")
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return "", err
 	}
+	defer file.Close()
 
-	if fStat == nil {
-		// create new file
-		f, err := os.Create(fileName)
-		if err != nil {
-			fmt.Println("err create file "+fileName, err)
-			return err
-		}
-		defer f.Close()
-
-		err = tmplFile.Execute(f, data)
-		if err != nil {
-			fmt.Println("err call tmpl.Execute", err)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "module") {
+			moduleName := strings.TrimSpace(strings.TrimPrefix(line, "module"))
+			return moduleName, nil
 		}
 	}
 
-	return nil
+	if err := scanner.Err(); err != nil {
+		fmt.Println("Error reading file:", err)
+		return "", err
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Ошибка получения текущей директории:", err)
+		return "", err
+	}
+
+	return filepath.Base(dir), nil
+
 }
