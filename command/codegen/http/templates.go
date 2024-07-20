@@ -96,7 +96,7 @@ import (
 
 type {{.ServiceName}}Service struct {}
 
-func New{{.ServiceName}}Service() *{{.ServiceName}}Service {
+func NewService() *{{.ServiceName}}Service {
 	return &{{.ServiceName}}Service{}
 }
 `
@@ -111,7 +111,7 @@ func (s *{{.ServiceName}}Service) {{.ServiceMethod}}(ctx context.Context, in *ge
 const tmplAddCodeToRouterFile = `
 generated.{{.Name}}(
 		tr,
-		{{.ServiceNameToLower}}.New{{.ServiceName}}Service().{{.ServiceMethod}},
+		{{.ServiceNameToLower}}.NewService().{{.ServiceMethod}},
 		logger,
 		server.ErrorHandler,
 	)
