@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"log"
 	"os"
 	"text/template"
@@ -76,7 +78,10 @@ func GenerateHttpClientEndpoints(dirName string) ([]string, error) {
 		return nil, err
 	}
 
-	tmpl, err := template.New("gen_structure").Parse(tmplClientEndpoint)
+	tmpl, err := template.New("gen_structure").Funcs(template.FuncMap{
+		"toCamelCase": toCamelCase,
+	}).Parse(tmplClientEndpoint)
+
 	if err != nil {
 		return nil, err
 	}
@@ -92,4 +97,9 @@ func GenerateHttpClientEndpoints(dirName string) ([]string, error) {
 	}
 
 	return res, nil
+}
+
+func toCamelCase(method string) string {
+	caser := cases.Title(language.Und)
+	return caser.String(method)
 }

@@ -64,12 +64,7 @@ func {{.Name}}(
 	ctx context.Context, client *simpleClient.SimpleClient, in any) (*{{.OutputResponse}}, error) {
 	var dest {{.OutputResponse}}
 
-	url, err := simpleClient.BuildURL("{{.Url}}", in)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Get(ctx, url, nil)
+	resp, err := client.{{toCamelCase .Method}}(ctx, "{{.Url}}", in, nil)
 	if err != nil {
 		return nil, err
 	}
