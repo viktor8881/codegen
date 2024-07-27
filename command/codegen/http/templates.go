@@ -11,8 +11,7 @@ package server
 import (
 	"context"
 	customHttp "github.com/viktor8881/service-utilities/http/server"
-	"go.uber.org/zap"
-	"net/http"
+	"go.uber.org/zap"	
 )
 
 
