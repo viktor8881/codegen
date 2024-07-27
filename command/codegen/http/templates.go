@@ -52,6 +52,14 @@ import (
 	simpleClient "github.com/viktor8881/service-utilities/http/client"	
 )
 
+type Client struct {
+	client *simpleClient.SimpleClient
+}
+
+func NewClient(client *simpleClient.SimpleClient) *Client {
+	return &Client{client: client}
+}
+
 {{- range .Endpoints }}
 
 {{ . }}
@@ -59,11 +67,11 @@ import (
 `
 
 const tmplClientEndpoint = `
-func {{.Name}}(
+func (c *Client){{.Name}}(
 	ctx context.Context, client *simpleClient.SimpleClient, in any) (*{{.OutputResponse}}, error) {
 	var dest {{.OutputResponse}}
 
-	resp, err := client.{{toCamelCase .Method}}(ctx, "{{.Url}}", in, nil)
+	resp, err := c.client.{{toCamelCase .Method}}(ctx, "{{.Url}}", in, nil)
 	if err != nil {
 		return nil, err
 	}
