@@ -68,7 +68,7 @@ func NewClient(client *simpleClient.SimpleClient) *Client {
 
 const tmplClientEndpoint = `
 func (c *Client){{.Name}}(
-	ctx context.Context, client *simpleClient.SimpleClient, in any) (*{{.OutputResponse}}, error) {
+	ctx context.Context, in any) (*{{.OutputResponse}}, error) {
 	var dest {{.OutputResponse}}
 
 	resp, err := c.client.{{toCamelCase .Method}}(ctx, "{{.Url}}", in, nil)
