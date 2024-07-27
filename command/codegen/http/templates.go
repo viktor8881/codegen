@@ -27,6 +27,7 @@ func {{.Name}}(
 	t *customHttp.Transport,
 	handlerFn func(ctx context.Context, in *{{.InputRequest}}) (*{{.OutputResponse}}, error),
 	logger *zap.Logger,	
+	middlewares ...customHttp.Middleware,
 ) {
 	t.AddEndpoint(
 		"{{.Url}}",
@@ -36,6 +37,7 @@ func {{.Name}}(
 			return handlerFn(ctx, in.(*{{.InputRequest}}))
 		},
 		logger,	
+		middlewares...,
 	)
 }
 `
