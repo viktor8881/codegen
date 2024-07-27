@@ -27,8 +27,7 @@ const tmplServerEndpoint = `
 func {{.Name}}(
 	t *customHttp.Transport,
 	handlerFn func(ctx context.Context, in *{{.InputRequest}}) (*{{.OutputResponse}}, error),
-	logger *zap.Logger,
-	fErrorHandler func(w http.ResponseWriter, r *http.Request, err error, logger *zap.Logger),
+	logger *zap.Logger,	
 ) {
 	t.AddEndpoint(
 		"{{.Url}}",
@@ -37,8 +36,7 @@ func {{.Name}}(
 		func(ctx context.Context, in interface{}) (interface{}, error) {
 			return handlerFn(ctx, in.(*{{.InputRequest}}))
 		},
-		logger,
-		fErrorHandler,
+		logger,	
 	)
 }
 `
@@ -107,7 +105,6 @@ const tmplAddCodeToRouterFile = `
 generated.{{.Name}}(
 		tr,
 		{{.ServiceNameToLower}}.NewService().{{.ServiceMethod}},
-		logger,
-		server.ErrorHandler,
+		logger,	
 	)
 `
