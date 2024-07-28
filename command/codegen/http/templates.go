@@ -49,6 +49,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	simpleClient "github.com/viktor8881/service-utilities/http/client"	
 )
 
@@ -68,7 +69,7 @@ func NewClient(client *simpleClient.SimpleClient) *Client {
 
 const tmplClientEndpoint = `
 func (c *Client){{.Name}}(
-	ctx context.Context, in any) (*{{.OutputResponse}}, error) {
+	ctx context.Context, in *{{.InputRequest}}) (*{{.OutputResponse}}, error) {
 	var dest {{.OutputResponse}}
 
 	resp, err := c.client.{{toCamelCase .Method}}(ctx, "{{.Url}}", in, nil)
@@ -81,7 +82,7 @@ func (c *Client){{.Name}}(
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&dest); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode response body: %w", err)
 	}
 
 	return &dest, nil
