@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/viktor8881/codegen/command/codegen"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"log"
@@ -12,16 +13,23 @@ import (
 )
 
 func GenerateHttpClientFile(dirName string) error {
-	tmpl, err := template.New("gen_structure").Parse(tmplClientEndpointFile)
+	tmpl, err := template.New("gen_structure").Parse(TmplClientEndpointFile)
 	if err != nil {
 		fmt.Println("err read template: ", err)
 		return err
 	}
 
+	packageName, err := codegen.GetPackageName()
+	if err != nil {
+		fmt.Println("err getPackageName: ", err)
+	}
+
 	data := struct {
-		Endpoints []string
-		Models    []string
-	}{}
+		Endpoints   []string
+		PackageName string
+	}{
+		PackageName: packageName,
+	}
 
 	endpoints, err := GenerateHttpClientEndpoints(dirName)
 	if err != nil {
@@ -38,11 +46,6 @@ func GenerateHttpClientFile(dirName string) error {
 	if err := os.MkdirAll("./generated"+dirName, os.ModePerm); err != nil {
 		fmt.Println("err make dir "+dirName+": ", err)
 		return err
-	}
-
-	// copy models.go
-	if err := copyFile("./contracts"+dirName+"/models.go", "./generated"+dirName+"/models.go"); err != nil {
-		log.Fatalf("failed to copy file: %v", err)
 	}
 
 	f, err := os.Create("./generated" + dirName + "/endpoints.go")
@@ -80,7 +83,7 @@ func GenerateHttpClientEndpoints(dirName string) ([]string, error) {
 
 	tmpl, err := template.New("gen_structure").Funcs(template.FuncMap{
 		"toCamelCase": toCamelCase,
-	}).Parse(tmplClientEndpoint)
+	}).Parse(TmplClientEndpoint)
 
 	if err != nil {
 		return nil, err

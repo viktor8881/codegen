@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "ListUserEndpoint",
+    "Description": "list user",
+    "Method": "GET",
+    "Url": "/user/list",
+    "ServiceName": "User",
+    "ServiceMethod": "ListUser",
+    "InputRequest": "EmptyRequest",
+    "OutputResponse": "ListUserResponse"
+  }
+]

@@ -1,17 +1,15 @@
 package http
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/viktor8881/codegen/command/codegen"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"text/template"
 	"unicode"
@@ -29,16 +27,23 @@ type Endpoint struct {
 }
 
 func GenerateHttpServerFile(dirName string) error {
-	tmpl, err := template.New("gen_structure").Parse(tmplServerEndpointFile)
+	tmpl, err := template.New("gen_structure").Parse(TmplServerEndpointFile)
 	if err != nil {
 		fmt.Println("err read template: ", err)
 		return err
 	}
 
+	packageName, err := codegen.GetPackageName()
+	if err != nil {
+		fmt.Println("err getPackageName: ", err)
+	}
+
 	data := struct {
-		Endpoints []string
-		Models    []string
-	}{}
+		Endpoints   []string
+		PackageName string
+	}{
+		PackageName: packageName,
+	}
 
 	// Создание директории, если она не существует
 	if err := os.MkdirAll("./generated"+dirName, os.ModePerm); err != nil {
@@ -55,11 +60,6 @@ func GenerateHttpServerFile(dirName string) error {
 	fmt.Println("find GenerateHttpServerEndpoints: ", len(endpoints))
 	for _, e := range endpoints {
 		data.Endpoints = append(data.Endpoints, e)
-	}
-
-	// copy models.go
-	if err := copyFile("./contracts"+dirName+"/models.go", "./generated"+dirName+"/models.go"); err != nil {
-		log.Fatalf("failed to copy file: %v", err)
 	}
 
 	f, err := os.Create("./generated" + dirName + "/endpoints.go")
@@ -95,17 +95,17 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 		return nil, err
 	}
 
-	tmpl, err := template.New("gen_structure").Parse(tmplServerEndpoint)
+	tmpl, err := template.New("gen_structure").Parse(TmplServerEndpoint)
 	if err != nil {
 		return nil, err
 	}
 
-	tmplLSFile, err := template.New("gen_logic_service").Parse(tmplLogicServiceFile)
+	tmplLSFile, err := template.New("gen_logic_service").Parse(TmplLogicServiceFile)
 	if err != nil {
 		return nil, err
 	}
 
-	tmplLSEndpoint, err := template.New("gen_logic_service_endpoints").Parse(tmplLogicServiceEndpoint)
+	tmplLSEndpoint, err := template.New("gen_logic_service_endpoints").Parse(TmplLogicServiceEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -129,41 +129,14 @@ func GenerateHttpServerEndpoints(dirName string) ([]string, error) {
 	return res, nil
 }
 
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	destinationFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destinationFile.Close()
-
-	_, err = destinationFile.WriteString(tmplCodeGeneratorPhrase)
-	if err != nil {
-		fmt.Println("Ошибка записи строки в файл назначения:", err)
-		return err
-	}
-
-	_, err = io.Copy(destinationFile, sourceFile)
-	if err != nil {
-		return err
-	}
-
-	return destinationFile.Sync()
-}
-
 func createInnerFiles(e Endpoint, tmplFile, tmplService *template.Template) error {
-	packageName, err := getPackageName()
+	packageName, err := codegen.GetPackageName()
 	if err != nil {
 		fmt.Println("err getPackageName: ", err)
 	}
 
 	dirname := "./inner/" + strings.ToLower(e.ServiceName)
-	err = createDirIfNeed(dirname)
+	err = codegen.CreateDirIfNeed(dirname)
 	if err != nil {
 		fmt.Println("err create dir "+dirname+": ", err)
 		return err
@@ -241,21 +214,6 @@ func createLogicServiceFileIfNeed(fileName string, tmplFile *template.Template, 
 	return nil
 }
 
-func createDirIfNeed(dirname string) error {
-	dState, err := os.Stat(dirname)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	if dState == nil {
-		if err := os.MkdirAll(dirname, os.ModePerm); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Template, e Endpoint) error {
 	fNames, err := listFunctionByFileName(fileName)
 	if err != nil {
@@ -278,7 +236,7 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 		}
 
 		fmt.Println("Add next code to your router file:")
-		tmplRouterCode := template.Must(template.New("service").Parse(tmplAddCodeToRouterFile))
+		tmplRouterCode := template.Must(template.New("service").Parse(TmplAddCodeToRouterFile))
 		var buf bytes.Buffer
 		data := struct {
 			Name               string
@@ -301,36 +259,4 @@ func addMethodToLogicServiceFileIfNeed(fileName string, tmplService *template.Te
 	}
 
 	return nil
-}
-
-func getPackageName() (string, error) {
-	file, err := os.Open("go.mod")
-	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return "", err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "module") {
-			moduleName := strings.TrimSpace(strings.TrimPrefix(line, "module"))
-			return moduleName, nil
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Println("Error reading file:", err)
-		return "", err
-	}
-
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Ошибка получения текущей директории:", err)
-		return "", err
-	}
-
-	return filepath.Base(dir), nil
-
 }

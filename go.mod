@@ -4,9 +4,10 @@ go 1.22.4
 
 require (
 	github.com/spf13/cobra v1.8.1
-	github.com/viktor8881/service-utilities v1.0.10
+	github.com/viktor8881/service-utilities v1.0.15
 	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.16.0
+	gopkg.in/telebot.v3 v3.3.6
 )
 
 require (

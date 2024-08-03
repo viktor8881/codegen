@@ -17,6 +17,6 @@
     "ServiceName": "article",
     "ServiceMethod": "Get",
     "InputRequest": "GetArticleRequest",
-    "OutputResponse": "ProxyResponse"
+    "OutputResponse": "GetArticleResponse"
   }
 ]
