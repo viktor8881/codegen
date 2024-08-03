@@ -26,7 +26,7 @@ const TmplServerEndpoint = `
 func {{.Name}}(
 	t *server.Transport,
 	decodeFn server.DecodeRequestFunc,
-	handlerFn server.HandlerFunc,
+	serviceFn func(ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error),
 	encodeFn server.EncodeResponseFunc,
 	errorHandlerFn server.ErrorHandlerFunc,
 	logger *zap.Logger,	
@@ -38,7 +38,7 @@ func {{.Name}}(
 		(*generated.{{.InputRequest}})(nil),
 		decodeFn,
 		func(ctx context.Context, in interface{}) (interface{}, error) {
-			return handlerFn(ctx, in.(*generated.{{.InputRequest}}))
+			return serviceFn(ctx, in.(*generated.{{.InputRequest}}))
 		},
 		encodeFn,
 		errorHandlerFn,

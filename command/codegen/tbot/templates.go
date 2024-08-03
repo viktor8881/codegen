@@ -25,9 +25,9 @@ import (
 const TmplTbotEndpoint = `
 func {{.Name}}(
 	ctx context.Context,
-	t *tbot.CustomBot,
+	t *tbot.Bot,
 	decodeFn tbot.DecodePayloadFunc,
-	handlerFn tbot.HandlerFunc,
+	serviceFn func(ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error),
 	encodeFn tbot.EncodeResponseFunc,
 	errorHandlerFn tbot.ErrorHandlerFunc,
 	logger *zap.Logger,
@@ -38,7 +38,7 @@ func {{.Name}}(
 		(*generated.{{.InputRequest}})(nil),
 		decodeFn,
 		func(c telebot.Context, in any) (any, error) {
-			return handlerFn(ctx, in.(*generated.{{.InputRequest}}))
+			return serviceFn(ctx, in.(*generated.{{.InputRequest}}))
 		},
 		encodeFn,
 		errorHandlerFn,
