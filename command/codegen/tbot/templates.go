@@ -27,9 +27,9 @@ func {{.Name}}(
 	ctx context.Context,
 	t *tbot.CustomBot,
 	decodeFn tbot.DecodePayloadFunc,
-	handlerFn tbog.HandlerFunc,
+	handlerFn tbot.HandlerFunc,
 	encodeFn tbot.EncodeResponseFunc,
-	errorHandlerFn tbog.ErrorHandlerFunc,
+	errorHandlerFn tbot.ErrorHandlerFunc,
 	logger *zap.Logger,
 	middlewares ...tbot.Middleware,
 ) {

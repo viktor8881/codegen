@@ -60,10 +60,10 @@ import (
 )
 
 type Client struct {
-	client *simplehttp.SimpleClient
+	client *client.Client
 }
 
-func NewClient(client *simplehttp.SimpleClient) *Client {
+func NewClient(client *client.Client) *Client {
 	return &Client{client: client}
 }
 

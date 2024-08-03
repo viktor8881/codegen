@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const version = "v0.1.15"
+const version = "v0.1.16"
 
 func Version(cmd *cobra.Command, args []string) {
 	fmt.Println("My CLI tool " + version)
