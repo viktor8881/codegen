@@ -21,7 +21,7 @@ func NewService() *Service {
 
 const TmplLogicServiceEndpoint = `
 func (s *Service) {{.ServiceMethod}}(ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error) {
-var dest generated.{{.OutputResponse}}
-return &dest, errors.New("not implemented")
+	var dest generated.{{.OutputResponse}}
+	return &dest, errors.New("not implemented")
 }
 `
