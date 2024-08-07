@@ -5,24 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/viktor8881/codegen/command/codegen"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"log"
 	"os"
-	"strings"
 	"text/template"
 )
-
-type Endpoint struct {
-	Name           string
-	Description    string
-	Url            string
-	Method         string
-	ServiceName    string
-	ServiceMethod  string
-	InputRequest   string
-	OutputResponse string
-}
 
 func GenerateTbotClientFile(dirName string) error {
 	tmpl, err := template.New("gen_structure").Parse(TmplTbotEndpointFile)
@@ -73,30 +59,6 @@ func GenerateTbotClientFile(dirName string) error {
 		return err
 	}
 
-	//===================
-	//fmt.Println("Add next code to your router file:")
-	//tmplRouterCode := template.Must(template.New("service").Parse(TmplAddCodeToRouterFile))
-	//var buf bytes.Buffer
-	//data := struct {
-	//	Name               string
-	//	ServiceName        string
-	//	ServiceNameToLower string
-	//	ServiceMethod      string
-	//}{
-	//	Name:               e.Name,
-	//	ServiceName:        e.ServiceName,
-	//	ServiceNameToLower: strings.ToLower(e.ServiceName),
-	//	ServiceMethod:      e.ServiceMethod,
-	//}
-	//err = tmplRouterCode.Execute(&buf, data)
-	//if err != nil {
-	//	fmt.Println("err call tmplRouterCode.Execute: ", err)
-	//	return err
-	//}
-	//
-	//fmt.Println(buf.String())
-	//===================
-
 	log.Println("File created successfully")
 	return nil
 }
@@ -110,7 +72,7 @@ func GenerateTbotEndpoints(dirName string) ([]string, error) {
 	}
 
 	// Десериализуем JSON
-	var endpoints []Endpoint
+	var endpoints []codegen.Endpoint
 	err = json.Unmarshal(content, &endpoints)
 	if err != nil {
 		fmt.Println("Error unmarshalling JSON:", err)
@@ -133,32 +95,12 @@ func GenerateTbotEndpoints(dirName string) ([]string, error) {
 		}
 		res = append(res, buf.String())
 
-		fmt.Println("Add next code to your router file2:")
-		var buf2 bytes.Buffer
-		data := struct {
-			Name               string
-			ServiceName        string
-			ServiceNameToLower string
-			ServiceMethod      string
-		}{
-			Name:               e.Name,
-			ServiceName:        e.ServiceName,
-			ServiceNameToLower: strings.ToLower(e.ServiceName),
-			ServiceMethod:      e.ServiceMethod,
-		}
-		err := tmplRouterCode.Execute(&buf2, data)
+		err = codegen.CreateInnerFiles(e, tmplRouterCode)
 		if err != nil {
-			fmt.Println("err call tmplRouterCode.Execute: ", err)
+			fmt.Println("err create inner files: ", err)
 			return nil, err
 		}
-
-		fmt.Println(buf2.String())
 	}
 
 	return res, nil
-}
-
-func toCamelCase(method string) string {
-	caser := cases.Title(language.Und)
-	return caser.String(method)
 }

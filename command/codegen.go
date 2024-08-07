@@ -61,7 +61,7 @@ func prepare() error {
 	}
 
 	// copy models.go
-	if err := codegen.CopyFile("./contracts/models.go", "./generated/models.go", http.TmplCodeGeneratorPhrase); err != nil {
+	if err := codegen.CopyFile("./contracts/models.go", "./generated/models.go", codegen.TmplCodeGeneratorPhrase); err != nil {
 		return fmt.Errorf("failed to copy models.go: %w", err)
 	}
 

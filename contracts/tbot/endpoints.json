@@ -1,9 +1,19 @@
 [
   {
+    "Name": "AnyTextEndpoint",
+    "Description": "any text",
+    "Method": "GET",
+    "Url": "\\atext",
+    "ServiceName": "Base",
+    "ServiceMethod": "AnyText",
+    "InputRequest": "EmptyRequest",
+    "OutputResponse": "ProxyResponse"
+  },
+  {
     "Name": "ListUserEndpoint",
     "Description": "list user",
     "Method": "GET",
-    "Url": "/user/list",
+    "Url": "/userlist",
     "ServiceName": "User",
     "ServiceMethod": "ListUser",
     "InputRequest": "EmptyRequest",

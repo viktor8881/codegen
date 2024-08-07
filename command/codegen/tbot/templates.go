@@ -1,10 +1,10 @@
 package tbot
 
 import (
-	"github.com/viktor8881/codegen/command/codegen/http"
+	"github.com/viktor8881/codegen/command/codegen"
 )
 
-const TmplTbotEndpointFile = http.TmplCodeGeneratorPhrase + `
+const TmplTbotEndpointFile = codegen.TmplCodeGeneratorPhrase + `
 package tbot
 
 import (

@@ -74,7 +74,7 @@ func GenerateHttpClientEndpoints(dirName string) ([]string, error) {
 	}
 
 	// Десериализуем JSON
-	var endpoints []Endpoint
+	var endpoints []codegen.Endpoint
 	err = json.Unmarshal(content, &endpoints)
 	if err != nil {
 		fmt.Println("Error unmarshalling JSON:", err)
