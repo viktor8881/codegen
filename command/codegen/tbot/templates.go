@@ -9,6 +9,7 @@ package tbot
 
 import (
 	"context"
+	"github.com/viktor8881/service-utilities/observability"
 	"github.com/viktor8881/service-utilities/tbot"
 	"go.uber.org/zap"
 	"gopkg.in/telebot.v3"
@@ -38,7 +39,16 @@ func {{.Name}}(
 		(*generated.{{.InputRequest}})(nil),
 		decodeFn,
 		func(c telebot.Context, in any) (any, error) {
-			return serviceFn(tbot.ContextFromTelebot(c, ctx), in.(*generated.{{.InputRequest}}))
+			handlerCtx, span := observability.StartSpan(tbot.ContextFromTelebot(c, ctx), "codegen/tbot", "{{.Name}}")
+			defer span.End()
+
+			out, err := serviceFn(handlerCtx, in.(*generated.{{.InputRequest}}))
+			if err != nil {
+				observability.RecordError(span, err)
+				return nil, err
+			}
+
+			return out, nil
 		},
 		encodeFn,
 		errorHandlerFn,

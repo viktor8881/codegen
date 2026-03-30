@@ -8,6 +8,7 @@ package server
 import (
 	"context"
 	"github.com/viktor8881/service-utilities/http/server"
+	"github.com/viktor8881/service-utilities/observability"
 	"go.uber.org/zap"
 	"{{.PackageName}}/generated"
 )
@@ -36,7 +37,16 @@ func {{.Name}}(
 		(*generated.{{.InputRequest}})(nil),
 		decodeFn,
 		func(ctx context.Context, in interface{}) (interface{}, error) {
-			return serviceFn(ctx, in.(*generated.{{.InputRequest}}))
+			ctx, span := observability.StartSpan(ctx, "codegen/http-server", "{{.Name}}")
+			defer span.End()
+
+			out, err := serviceFn(ctx, in.(*generated.{{.InputRequest}}))
+			if err != nil {
+				observability.RecordError(span, err)
+				return nil, err
+			}
+
+			return out, nil
 		},
 		encodeFn,
 		errorHandlerFn,
@@ -54,6 +64,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/viktor8881/service-utilities/http/client"
+	"github.com/viktor8881/service-utilities/observability"
 	"{{.PackageName}}/generated"
 )
 
@@ -74,10 +85,14 @@ func NewClient(client *client.Client) *Client {
 const TmplClientEndpoint = `
 func (c *Client){{.Name}}(
 	ctx context.Context, in *generated.{{.InputRequest}}) (*generated.{{.OutputResponse}}, error) {
+	ctx, span := observability.StartSpan(ctx, "codegen/http-client", "{{.Name}}")
+	defer span.End()
+
 	var dest generated.{{.OutputResponse}}
 
 	resp, err := c.client.{{toCamelCase .Method}}(ctx, "{{.Url}}", in, nil)
 	if err != nil {
+		observability.RecordError(span, err)
 		return nil, err
 	}
 
@@ -86,6 +101,7 @@ func (c *Client){{.Name}}(
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&dest); err != nil {
+		observability.RecordError(span, err)
 		return nil, fmt.Errorf("failed to decode response body: %w", err)
 	}
 
