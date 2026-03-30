@@ -38,7 +38,7 @@ func {{.Name}}(
 		(*generated.{{.InputRequest}})(nil),
 		decodeFn,
 		func(c telebot.Context, in any) (any, error) {
-			return serviceFn(ctx, in.(*generated.{{.InputRequest}}))
+			return serviceFn(tbot.ContextFromTelebot(c, ctx), in.(*generated.{{.InputRequest}}))
 		},
 		encodeFn,
 		errorHandlerFn,
